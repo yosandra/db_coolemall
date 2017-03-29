@@ -1,6 +1,6 @@
 import socket
-from types import *
-
+from basic_types import *
+from basic_types.factory import Factory
 
 # Constants
 # TODO: this is the same number as in DirectRPCServer
@@ -22,8 +22,7 @@ def directRPCClient( message, ip="localhost", port=SERVER_PORT ):
         response = response + data
     sock.close()
     #print("Received: %s" % response)
-
-    from types.factory import Factory
+  
     for imp in Factory.import_all():
         try:
             exec imp

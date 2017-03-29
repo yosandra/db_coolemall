@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+import logging, os.path, signal, socket, sys, time
+import threading
+
+# Add src/py to the system path
+MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
+sys.path.append( os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src" ) ) )
+
+from databases import MysqlDatabase
+from direct_rpc_server import DirectRPCServer
+
+# Constants
+DB_DEFAULT = "coolemalldb"
+DB_USER = "coolemall"
+DB_PASSWORD = "coolemall"
+DB_HOST = "localhost"
+RCP_PORT = 9450
+
+# Global variables
+shutdown_flag = False
+
+if __name__ == "__main__":
+
+    hostname = socket.gethostbyaddr(socket.gethostname())[0]
+    logging.info( "Starting Database..." )
+    # start database on this host, the instance is stored in a class variable
+    #db = MysqlDatabase( DB_HOST, DB_USER, DB_PASSWORD, DB_DEFAULT )
+
+    # open direct RPC socket server
+    direct_rpc_server = DirectRPCServer( port=int( RCP_PORT ) )
+    
+    # register some rpc
+    def whoami():
+        return hostname
+
+    def shutdown_main():
+        global shutdown_flag
+	shutdown_flag = True
+
+    def list_threads():            
+        return len(threading.enumerate()), threading.enumerate()
+
+    DirectRPCServer.register_rpc( "whoami", whoami )
+    DirectRPCServer.register_rpc( "shutdown_main", shutdown_main )
+    DirectRPCServer.register_rpc( "list_threads", list_threads )
+
+    while not shutdown_flag:
+        try:
+            time.sleep( 1 )
+        except KeyboardInterrupt:
+            logging.info( "Ctrl-C pressed!" )
+            break
+
+    #db.stopDB()
+    direct_rpc_server.server.shutdown()
+    logging.shutdown()
+    sys.exit(0)
